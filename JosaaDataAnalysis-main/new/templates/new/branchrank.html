@@ -1,0 +1,194 @@
+{% extends "new/iit_base.html" %}
+    
+{% block title%}iit charts{% endblock title %}
+
+{% block script %}
+<script>
+    let selectedRound = 1; // Default value
+    let selectedYear = 2016; // Default value
+    let selectedCategory='OPEN';
+    let branches = [];
+    let openingRank=[];
+    let openingRanksFemale = []; // Array for female supernumerary
+    let openingRanksOther = []; // Array for the rest
+
+
+    function changeYear(year) {
+        document.getElementById("yearDropdown").innerText = year;
+        selectedYear = year;
+        updateOpeningRanks();
+    }
+
+    function changeCategory(category) {
+        document.getElementById("categoryDropdown").innerText = category;
+        selectedCategory = category;
+        updateOpeningRanks();
+    }
+
+    function changeRound(round) {
+        const roundDropdown = document.getElementById('roundDropdown');
+        if (round === 1) {
+            roundDropdown.textContent = 'Round 1';
+        } else if (round === 2) {
+            roundDropdown.textContent = 'Round 2';
+        } else if (round === 3) {
+            roundDropdown.textContent = 'Round 3';
+        } else if (round === 4) {
+            roundDropdown.textContent = 'Round 4';
+        } else if (round === 5) {
+            roundDropdown.textContent = 'Round 5';
+        } else if (round === 6) {
+            roundDropdown.textContent = 'Round 6';
+        }
+        selectedRound = round;
+        updateOpeningRanks();
+    }
+
+    var data = JSON.parse('{{ data|escapejs }}');
+    for (let i = 0; i < data.length; i++) {
+        let adm = data[i].fields;
+        let academicProgramName = adm.academic_program_name;
+        let openingRank = adm.opening_rank;
+        let year = adm.year;
+        let seatType = adm.seat_type;
+        let round = adm.round;
+        
+        let branch = academicProgramName.split('(')[0].trim(); // Extract the branch name
+        // Add the branch to the array if it doesn't already exist
+        if (!branches.includes(branch)) {
+            branches.push(branch);
+        }
+    }
+
+    function updateOpeningRanks() {
+        openingRanks = [];
+        openingRanksFemale = [];
+        openingRanksOther = [];
+
+        data.forEach((adm) => {
+            let admFields = adm.fields;
+            let branch = admFields.academic_program_name.split('(')[0].trim();
+            let gender = admFields.gender;
+            let openingRank = admFields.opening_rank;
+
+            if (
+                admFields.year === selectedYear &&
+                admFields.seat_type === selectedCategory &&
+                admFields.round === selectedRound
+            ) {
+                openingRanks.push(openingRank);
+
+                if (gender === 'Female-only (including Supernumerary)') {
+                    openingRanksFemale.push(openingRank);
+                } else {
+                    openingRanksOther.push(openingRank);
+                }
+            }
+        });
+
+        // // Print the opening ranks arrays
+        // console.log("Opening Ranks:", openingRanks);
+        // console.log("Opening Ranks (Female-only):", openingRanksFemale);
+        // console.log("Opening Ranks (Other):", openingRanksOther);
+        // console.log("Branches: ", branches);
+        updateChart();
+    }
+    
+    let myChart;
+
+    function updateChart() {
+        if (typeof myChart !== 'undefined' && myChart !== null) {
+            // Update the chart data and labels
+            myChart.data.labels = branches;
+            myChart.data.datasets[0].data = openingRanksOther;
+            myChart.update(); // Update the chart
+        } else {
+            // Create a new chart instance
+            const ctx = document.getElementById('myChart');
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: branches,
+                    datasets: [{
+                        label: '# of Votes',
+                        data: openingRanks,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    $(document).ready(function() {
+        // Call the updateOpeningRanks function initially
+        updateOpeningRanks();
+
+    });
+
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Branch vs Ranks</h5>
+            <div class="dropdown-container">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="roundDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Round 1
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="roundDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeRound(1)">Round 1</a>
+                        <a class="dropdown-item" href="#" onclick="changeRound(2)">Round 2</a>
+                        <a class="dropdown-item" href="#" onclick="changeRound(3)">Round 3</a>
+                        <a class="dropdown-item" href="#" onclick="changeRound(4)">Round 4</a>
+                        <a class="dropdown-item" href="#" onclick="changeRound(5)">Round 5</a>
+                        <a class="dropdown-item" href="#" onclick="changeRound(6)">Round 6</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="yearDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        2016
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="yearDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeYear(2016)">2016</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2017)">2017</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2018)">2018</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2019)">2019</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2020)">2020</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2021)">2021</a>
+                        <a class="dropdown-item" href="#" onclick="changeYear(2022)">2022</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="categoryDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        OPEN
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OPEN')">OPEN</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('EWS')">EWS</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OBC-NCL')">OBC-NCL</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('SC')">SC</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('ST')">ST</a>
+                    </div>
+                </div>
+            </div>
+            <div class="image-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

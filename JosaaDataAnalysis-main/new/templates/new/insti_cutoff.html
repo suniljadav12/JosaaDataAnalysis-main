@@ -1,0 +1,246 @@
+{% extends "new/iit_base.html" %}
+{% block title%}institute-wise analysis{% endblock title %}
+<!-- JavaScript code for rendering the graph -->
+{% block script %}>
+<script>
+
+    let selectedCategory='OPEN';
+    let selectedInstitute = 'Indian Institute of Technology, Bombay';
+    let selectedGender = 'Gender-Neutral'
+    let yearsList = [2016,2017,2018,2019,2020,2021,2022];
+    let institutes = [];
+
+
+    function changeCategory(category) {
+        document.getElementById("categoryDropdown").innerText = category;
+        selectedCategory = category;
+        updateclosingRanks();
+    }
+    function changeGender(gender) {
+        document.getElementById("genderDropdown").innerText = gender;
+        selectedGender = gender;
+        updateclosingRanks();
+    }
+
+    var admissionsData = JSON.parse('{{ admissions_data|escapejs }}');
+    // console.log(admissionsData);
+
+    for (let i = 0; i < admissionsData.length; i++) {
+        let adm = admissionsData[i].fields;
+        let academicProgramName = adm.academic_program_name;
+        let year = adm.year;
+        let seatType = adm.seat_type;
+        let round = adm.round;
+        let institute = adm.institute;
+        let branch = academicProgramName.split('(')[0].trim(); // Extract the branch name
+        // Add the institute to the array if it doesn't already exist
+        if (!institutes.includes(institute)) {
+            institutes.push(institute);
+        }
+    }
+    
+    function changeInstitute(institute) {
+        document.getElementById("instituteDropdown").innerText = institute;
+        selectedInstitute = institute;
+        updateclosingRanks();
+    }
+    
+    // Filter the data based on selected options
+    let closingRanks = {};
+
+    function updateclosingRanks() {
+        closingRanks = {};
+
+        admissionsData.forEach((adm) => {
+            let admFields = adm.fields;
+            let year = admFields.year;
+            let branch = admFields.academic_program_name.split('(')[0].trim();
+            let gender = admFields.gender;
+            let seatType = admFields.seat_type;
+            let institute = admFields.institute;
+            let closingRank = admFields.closing_rank;
+
+            if (
+                ((selectedGender === 'Gender-Neutral' && (gender === '' || gender === 'Gender-Neutral')) || gender === selectedGender) &&
+                (seatType === selectedCategory) &&
+                (institute === selectedInstitute)
+            ) {
+                if (!closingRanks.hasOwnProperty(branch)) {
+                    closingRanks[branch] = {};
+                }
+
+                if (!closingRanks[branch].hasOwnProperty(year)) {
+                    closingRanks[branch][year] = closingRank;
+                } else {
+                    closingRanks[branch][year] = closingRank;
+                }
+            }
+        });
+
+    
+        console.log(closingRanks);
+        updateChart();
+    }
+
+
+    
+    let myChart;
+
+    function updateChart() {
+    let ctx = document.getElementById('myChart').getContext('2d');
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    let datasets = [];
+
+    // Iterate over each branch in the closingRanks object
+    for (let branch in closingRanks) {
+        if (closingRanks.hasOwnProperty(branch)) {
+            let dataOther = [];
+            for (let i = 0; i < yearsList.length; i++) {
+                let year = yearsList[i];
+                if (closingRanks[branch].hasOwnProperty(year)) {
+                    dataOther.push(closingRanks[branch][year]);
+                } else {
+                    dataOther.push(null);
+                }
+            }
+
+            let colour = getRandomColor();
+            let datasetOther = {
+                label: `${branch}`,
+                data: dataOther,
+                borderColor: colour,
+                backgroundColor: colour,
+                fill: false
+            };
+            datasets.push(datasetOther);
+        }
+    }
+
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: yearsList,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Year'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Closing Rank'
+                    }
+                }
+            }
+        }
+    });
+}
+
+    // Helper function to generate random color
+    function getRandomColor() {
+    let letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+    }
+
+
+
+    $(document).ready(function() {
+        // Populate the institute dropdown menu
+        const instituteDropdownMenu = document.getElementById("instituteDropdownMenu");
+
+        // Clear existing options
+        instituteDropdownMenu.innerHTML = "";
+
+        institutes.forEach(function(institute) {
+            const instituteOption = document.createElement("a");
+            instituteOption.classList.add("dropdown-item");
+            instituteOption.href = "#";
+            instituteOption.textContent = institute;
+            instituteOption.onclick = function() {
+                changeInstitute(institute);
+            };
+
+            instituteDropdownMenu.appendChild(instituteOption);
+        });
+        // Call the updateclosingRanks function initially
+        updateclosingRanks();
+    });
+
+
+</script>
+{% endblock %}
+
+
+
+
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card" style="text-align: center;">
+            <h3>Institute wise analysis</h3>  
+        </div>
+        <div class="card-body">
+            <h5 class="card-title" style="text-align: center;">Analysis for cut-off at each IIT for all branches</h5>
+            <div class="dropdown-container">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="categoryDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        OPEN
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OPEN')">OPEN</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('EWS')">EWS</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OBC-NCL')">OBC-NCL</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('SC')">SC</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('ST')">ST</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OPEN (PwD)')">OPEN (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('EWS (PwD)')">EWS (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OBC-NCL (PwD)')">OBC-NCL (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('SC (PwD)')">SC (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('ST (PwD)')">ST (PwD)</a>
+                    </div>
+                </div>              
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="genderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Gender-Neutral
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="genderDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeGender('Gender-Neutral')">Gender-Neutral</a>
+                        <a class="dropdown-item" href="#" onclick="changeGender('Female-only (including Supernumerary)')">Female</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="instituteDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Institute
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="instituteDropdown" id="instituteDropdownMenu">
+                        <!-- Institute options will be dynamically added here -->
+                    </div>
+                </div>
+            </div>      
+            <div class="image-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+

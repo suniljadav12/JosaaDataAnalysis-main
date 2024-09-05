@@ -1,0 +1,237 @@
+{% extends "new/iit_base.html" %}
+    
+{% block title%}iit charts{% endblock title %}
+
+{% block script %}
+<script>
+    
+    let selectedCategory='OPEN';
+    let selectedBranch = 'Computer Science and Engineering';
+    let selectedGender = 'Gender-Neutral'
+
+    let branches = [];
+    let rounds=['Round 1','Round 2','Round 3','Round 4','Round 5','Round 6','Round 7'];
+    let selectedYears = [2016,2017,2018,2019,2020,2021,2022];
+    let closingRank=[];
+    let closingRanksFemale = []; // Array for female supernumerary
+    let closingRanksOther = []; // Array for the rest
+
+    function handleButtonClick() {
+        window.location.href = "{% url 'iit-list' %}";
+    }
+
+
+    function changeCategory(category) {
+        document.getElementById("categoryDropdown").innerText = category;
+        selectedCategory = category;
+        updateclosingRanks();
+    }
+    function changeGender(gender) {
+        document.getElementById("genderDropdown").innerText = gender;
+        selectedGender = gender;
+        updateclosingRanks();
+    }
+
+    var data = JSON.parse('{{ data|escapejs }}');
+    for (let i = 0; i < data.length; i++) {
+        let adm = data[i].fields;
+        let academicProgramName = adm.academic_program_name;
+        let year = adm.year;
+        let seatType = adm.seat_type;
+        let round = adm.round;
+        let branch = academicProgramName.split('(')[0].trim(); // Extract the branch name
+        // Add the branch to the array if it doesn't already exist
+        if (!branches.includes(branch)) {
+            branches.push(branch);
+        }
+    }
+
+    function changeBranch(branch) {
+        document.getElementById("branchDropdown").innerText = branch;
+        selectedBranch = branch;
+        updateclosingRanks();
+    }
+
+    let closingRanks = {};
+    function updateclosingRanks() {
+        closingRanks = {};
+
+        data.forEach((adm) => {
+            let admFields = adm.fields;
+            let year = admFields.year;
+            let branch = admFields.academic_program_name.split('(')[0].trim();
+            let gender = admFields.gender;
+            let closingRank = admFields.closing_rank;
+
+            if (
+                admFields.seat_type === selectedCategory &&
+                branch === selectedBranch &&
+                ((selectedGender === 'Gender-Neutral' && (gender === '' || gender === 'Gender-Neutral')) || gender === selectedGender) 
+            ) {
+                if (!closingRanks.hasOwnProperty(year)) {
+                    closingRanks[year] = [];
+                }
+
+                closingRanks[year].push(closingRank);
+            }
+        });
+
+        // console.log('branch select',selectedBranch);
+        // console.log('category select',selectedCategory);
+        // console.log('gender select', selectedGender);
+        // console.log('closing ranks', closingRanks);
+
+        updateChart();
+    }
+
+    let myChart;
+
+function updateChart() {
+    let ctx = document.getElementById('myChart').getContext('2d');
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    let datasets = [];
+    
+    // Iterate over each year in the closingRanks object
+    for (let year in closingRanks) {
+        if (closingRanks.hasOwnProperty(year)) {
+            let dataOther = closingRanks[year]; // Get the dataset for the year
+            // console.log('dataset ele',dataOther)
+            // Create a dataset object for the year
+            let colour = getRandomColor();
+            let datasetOther = {
+                label: `Closing Rank - ${year}`,
+                data: dataOther,
+                borderColor: colour,
+                backgroundColor: colour,
+                fill: false
+            };
+            datasets.push(datasetOther);
+        }
+    }
+
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: rounds,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Round'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Closing Rank'
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+    // Helper function to generate random color
+    function getRandomColor() {
+    let letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+    }
+
+
+
+
+    $(document).ready(function() {
+        // Populate the branch dropdown menu
+        const branchDropdownMenu = document.getElementById("branchDropdownMenu");
+
+        // Clear existing options
+        branchDropdownMenu.innerHTML = "";
+
+        branches.forEach(function(branch) {
+            const branchOption = document.createElement("a");
+            branchOption.classList.add("dropdown-item");
+            branchOption.href = "#";
+            branchOption.textContent = branch;
+            branchOption.onclick = function() {
+                changeBranch(branch);
+            };
+
+            branchDropdownMenu.appendChild(branchOption);
+        });
+        // Call the updateclosingRanks function initially
+        updateclosingRanks();
+
+    });
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card" style="text-align: center;">
+            <h3>{{ institute_name }}</h3>  
+        </div>
+        <div class="card-body">
+            <h5 class="card-title" style="text-align: center;">Cut-off ranks vs Rounds for 2016-2022</h5>
+            <div class="dropdown-container">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="branchDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Computer Science and Engineering
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="branchDropdown" id="branchDropdownMenu">
+                        <!-- Branch options will be dynamically added here -->
+                    </div>
+                </div>                
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="categoryDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        OPEN
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OPEN')">OPEN</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('EWS')">EWS</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OBC-NCL')">OBC-NCL</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('SC')">SC</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('ST')">ST</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OPEN (PwD)')">OPEN (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('EWS (PwD)')">EWS (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('OBC-NCL (PwD)')">OBC-NCL (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('SC (PwD)')">SC (PwD)</a>
+                        <a class="dropdown-item" href="#" onclick="changeCategory('ST (PwD)')">ST (PwD)</a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle ml-3" type="button" id="genderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Gender-Neutral
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="genderDropdown">
+                        <a class="dropdown-item" href="#" onclick="changeGender('Gender-Neutral')">Gender-Neutral</a>
+                        <a class="dropdown-item" href="#" onclick="changeGender('Female-only (including Supernumerary)')">Female</a>
+                    </div>
+                </div>
+                <button class="btn btn-primary ml-auto" onclick="handleButtonClick()">Go to iit-list</button>
+            </div>
+            <div class="image-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

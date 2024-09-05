@@ -1,0 +1,23 @@
+{% extends "new/base.html" %}
+{% block content %}
+    {% for post in posts %}
+    <article class="media content-section">
+        <div class="media-body">
+          <div class="article-metadata">
+            <a href="{% url 'iitb' post.college %}">{{post.college}}</a>
+          </div>
+          <div class="media-content">
+            <div class="image-container">
+              <a href="{% url 'iitb' post.college %}"><img src="{{ post.image }}" alt="img" class="article-image" width="80" height="80"></a>
+
+            </div>
+            <div class="content-container">
+              <p class="text">Location: {{ post.location }}</p>
+              <p class="text">Established year: {{ post.estd }}</p>
+              <p class="text">NIRF Ranking: {{post.rank}}</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+{% endblock content %}

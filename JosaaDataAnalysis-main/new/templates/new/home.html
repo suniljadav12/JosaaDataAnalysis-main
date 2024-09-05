@@ -1,0 +1,43 @@
+{% extends "new/base.html" %}
+{% block content %}
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <h5><a href="{% url 'iit-list'%}">View Institute wise cut-off</a></h5>
+            </div>
+            <div class="media-content">
+                <p>View the cut-off data with the selected institutes and further narrow down with your choice of programs.
+                </p>
+            </div>
+        </div>
+    </article>
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <h5><a href="{% url 'insti_cutoff'%}">Analysize institute wise cut-off trends</a></h5>
+            </div>
+            <div class="media-content">
+                <p>Institute trends highlight the trends of various programs offered by a 
+                    particular institute over the years. This helps understand the popularity and 
+                    perception of programs offered by the institute, and 
+                    thus helps understand the demand for a particular program 
+                    in the institute during the counselling process.
+                </p>
+            </div>
+        </div>
+    </article>
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <h5><a href="{% url 'iitb' college='Indian Institute of Technology Bombay'%}">Roundwise cut-off Analysis</a></h5>
+            </div>
+            <div class="media-content">
+                <p>Round trends highlight the general trend of closing ranks throughout the
+                    rounds of the counselling process. This helps understand the likely 
+                    range of changes to the closing ranks throught the counselling process.
+                </p>
+            </div>
+        </div>    
+    </article>
+
+{% endblock content %}
